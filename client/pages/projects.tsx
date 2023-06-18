@@ -1,12 +1,13 @@
 import { NextPage } from "next";
 import { CustomNavbar } from "../components/common/CustomNavbar";
 
-const support: NextPage = () => {
+const projects: NextPage = () => {
   return (
     <>
       <CustomNavbar />
+      projects
     </>
   );
 };
 
-export default support;
+export default projects;

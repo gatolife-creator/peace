@@ -5,6 +5,7 @@ const ranking: NextPage = () => {
   return (
     <>
       <CustomNavbar />
+      ranking
     </>
   );
 };
