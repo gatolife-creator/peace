@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@metamask/providers": "^11.0.0",
     "@nextui-org/react": "^1.0.0-beta.13",
+    "boring-avatars": "^1.10.1",
     "next": "13.4.6",
     "react": "18.2.0",
     "react-dom": "18.2.0",
