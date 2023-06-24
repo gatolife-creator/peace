@@ -7,9 +7,10 @@ describe("Peace", () => {
         const Peace = await ethers.getContractFactory("Peace");
         const peace = await Peace.deploy();
 
-        await peace.connect(person).registerAsSupporter("gatolife");
+        await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
+        const { name, introduction } = await peace.getSupporterInfo(0);
 
-        expect(await peace.getSupporterName(0)).to.equal("gatolife");
+        expect(name === "person" && introduction === "I'm a good boy.").to.equal(true);
     })
 
     it("Register as project", async () => {
@@ -28,10 +29,10 @@ describe("Peace", () => {
         const Peace = await ethers.getContractFactory("Peace");
         const peace = await Peace.deploy();
 
-        await peace.connect(person1).registerAsSupporter("person1");
-        await peace.connect(person2).registerAsSupporter("person2");
-        await peace.connect(person3).registerAsSupporter("person3");
-        await peace.connect(person4).registerAsSupporter("person4");
+        await peace.connect(person1).registerAsSupporter("person1", "I'm a good boy.");
+        await peace.connect(person2).registerAsSupporter("person2", "I'm a good boy.");
+        await peace.connect(person3).registerAsSupporter("person3", "I'm a good boy.");
+        await peace.connect(person4).registerAsSupporter("person4", "I'm a good boy.");
 
         expect(await peace.getNumOfSupporters()).to.equal(4);
     })
@@ -47,5 +48,49 @@ describe("Peace", () => {
         await peace.connect(project4).registerAsProject("project4", "This is the best project ever.");
 
         expect(await peace.getNumOfProjects()).to.equal(4);
+    })
+
+    it("Get balance of peacefulToken", async () => {
+        const [person, project] = await ethers.getSigners();
+        const Peace = await ethers.getContractFactory("Peace");
+        const peace = await Peace.deploy();
+
+        await peace.connect(project).registerAsProject("project", "This is the best project ever.");
+        await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
+        await peace.connect(person).donate(0, { value: 20000 });
+
+        expect(await peace.balanceOf(person.address)).to.equal(20000);
+    })
+
+    it("On donate", async () => {
+        const [person, project] = await ethers.getSigners();
+        const Peace = await ethers.getContractFactory("Peace");
+        const peace = await Peace.deploy();
+
+        await peace.connect(project).registerAsProject("project", "This is the best project ever.");
+        await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
+
+        await expect(peace.connect(person).donate(0, { value: 20000 }))
+            .to.emit(peace, "onDonate").withArgs(0, 0, 20000);
+    })
+
+    it("On register as supporter", async () => {
+        const [person] = await ethers.getSigners();
+        const Peace = await ethers.getContractFactory("Peace");
+        const peace = await Peace.deploy();
+
+        await expect(peace.connect(person).registerAsSupporter("person", "I'm a good boy."))
+            .to.emit(peace, "onRegisterAsSupporter").withArgs(0, "person", "I'm a good boy.");
+    })
+
+    it("On change supporter info", async () => {
+        const [person] = await ethers.getSigners();
+        const Peace = await ethers.getContractFactory("Peace");
+        const peace = await Peace.deploy();
+
+        await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
+
+        await expect(peace.connect(person).changeSupporterInfo("person", "I'm a bad boy."))
+            .to.emit(peace, "onChangeSupporterInfo").withArgs(0, "person", "I'm a bad boy.");
     })
 })

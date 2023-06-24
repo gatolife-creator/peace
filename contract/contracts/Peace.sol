@@ -3,18 +3,31 @@ pragma solidity 0.8.18;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract Peace {
+contract Peace is ERC20 {
     using SafeMath for uint256;
     address public owner;
 
-    constructor() {
+    constructor() ERC20("PeacefulToken", "PFT") {
         owner = msg.sender;
     }
 
+    event onRegisterAsSupporter(uint256 id, string name, string introduction);
+    event onRegisterAsProject(uint256 id, string name, string description);
+    event onChangeSupporterInfo(uint256 id, string name, string introduction);
+    event onChangeProjectInfo(uint256 id, string name, string description);
+    event onDonate(uint256 supporterId, uint256 projectId, uint256 amount);
+    event onWithdraw(uint256 amount);
+
     struct Donation {
-        address addr;
+        address account;
         uint256 amount;
+    }
+
+    struct Supporter {
+        string name;
+        string introduction;
     }
 
     struct Project {
@@ -26,7 +39,7 @@ contract Peace {
     mapping(address => bool) isSupporterRegistered;
     mapping(uint256 => address) supporters;
     mapping(address => uint256) supporterIdFromAddress;
-    mapping(uint256 => string) supporterNames;
+    mapping(uint256 => Supporter) supporterInfo;
     mapping(uint256 => uint256) donationAmounts;
 
     uint256 projectId = 0;
@@ -37,24 +50,53 @@ contract Peace {
     mapping(uint256 => Donation[]) donations;
     mapping(uint256 => uint256) donationAmountsForProject;
 
-    function registerAsSupporter(string memory name) external {
+    function registerAsSupporter(
+        string memory name,
+        string memory introduction
+    ) external {
         require(!isSupporterRegistered[msg.sender]);
         supporters[supporterId] = msg.sender;
         supporterIdFromAddress[msg.sender] = supporterId;
-        supporterNames[supporterId] = name;
+        Supporter memory supporter = Supporter({
+            name: name,
+            introduction: introduction
+        });
+        supporterInfo[supporterId] = supporter;
         isSupporterRegistered[msg.sender] = true;
+        emit onRegisterAsSupporter(supporterId, name, introduction);
         supporterId = supporterId.add(1);
     }
 
     function getSupporterName(uint256 id) public view returns (string memory) {
         require(isSupporterRegistered[supporters[id]]);
-        console.log(supporterNames[id]);
-        return supporterNames[id];
+        return supporterInfo[id].name;
+    }
+
+    function getSupporterInfo(
+        uint256 id
+    ) public view returns (Supporter memory) {
+        return supporterInfo[id];
     }
 
     function changeSupporterName(string memory name) external {
         require(isSupporterRegistered[msg.sender]);
-        supporterNames[supporterIdFromAddress[msg.sender]] = name;
+        uint id = supporterIdFromAddress[msg.sender];
+        supporterInfo[id].name = name;
+        emit onChangeSupporterInfo(id, name, supporterInfo[id].introduction);
+    }
+
+    function changeSupporterInfo(
+        string memory name,
+        string memory introduction
+    ) external {
+        require(isSupporterRegistered[msg.sender]);
+        Supporter memory supporter = Supporter({
+            name: name,
+            introduction: introduction
+        });
+        uint256 id = supporterIdFromAddress[msg.sender];
+        supporterInfo[id] = supporter;
+        emit onChangeSupporterInfo(id, name, introduction);
     }
 
     function getNumOfSupporters() external view returns (uint256) {
@@ -74,6 +116,7 @@ contract Peace {
         });
         projectInfo[projectId] = project;
         isProjectRegistered[msg.sender] = true;
+        emit onRegisterAsProject(projectId, name, description);
         projectId = projectId.add(1);
     }
 
@@ -91,17 +134,23 @@ contract Peace {
             name: name,
             description: description
         });
-        projectInfo[projectIdFromAddress[msg.sender]] = project;
+        uint256 id = projectIdFromAddress[msg.sender];
+        projectInfo[id] = project;
+        emit onChangeProjectInfo(id, name, description);
     }
 
     function changeProjectName(string memory name) external {
         require(isProjectRegistered[msg.sender]);
-        projectInfo[projectIdFromAddress[msg.sender]].name = name;
+        uint256 id = projectIdFromAddress[msg.sender];
+        projectInfo[id].name = name;
+        emit onChangeProjectInfo(id, name, projectInfo[id].description);
     }
 
     function changeProjectDescription(string memory description) external {
         require(isProjectRegistered[msg.sender]);
-        projectInfo[projectIdFromAddress[msg.sender]].description = description;
+        uint256 id = projectIdFromAddress[msg.sender];
+        projectInfo[id].description = description;
+        emit onChangeProjectInfo(id, projectInfo[id].name, description);
     }
 
     function getNumOfProjects() external view returns (uint256) {
@@ -114,13 +163,16 @@ contract Peace {
                 isProjectRegistered[projects[id]]
         );
         Donation memory donation = Donation({
-            addr: msg.sender,
+            account: msg.sender,
             amount: msg.value
         });
         donations[id].push(donation);
         donationAmountsForProject[id] = donationAmountsForProject[id].add(
             msg.value
         );
+
+        emit onDonate(supporterIdFromAddress[msg.sender], id, msg.value);
+        _mint(msg.sender, msg.value);
     }
 
     function withdraw() external {
@@ -130,5 +182,10 @@ contract Peace {
         donationAmountsForProject[projectIdFromAddress[msg.sender]] = 0;
         delete donations[projectIdFromAddress[msg.sender]];
         payable(msg.sender).transfer(amount);
+        emit onWithdraw(amount);
+    }
+
+    function balanceOf(address account) public view override returns (uint256) {
+        return super.balanceOf(account);
     }
 }
