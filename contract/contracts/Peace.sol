@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.18;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./BaseNFT.sol";
 
 contract Peace is ERC20 {
     using SafeMath for uint256;
@@ -49,6 +49,7 @@ contract Peace is ERC20 {
     mapping(uint256 => Project) projectInfo;
     mapping(uint256 => Donation[]) donations;
     mapping(uint256 => uint256) donationAmountsForProject;
+    mapping(uint256 => BaseNFT) nftContracts;
 
     function registerAsSupporter(
         string memory name,
@@ -187,5 +188,15 @@ contract Peace is ERC20 {
 
     function balanceOf(address account) public view override returns (uint256) {
         return super.balanceOf(account);
+    }
+
+    function defineNewNFT(string memory name, string memory symbol) external {
+        BaseNFT baseNFT = new BaseNFT(name, symbol);
+        nftContracts[projectIdFromAddress[msg.sender]] = baseNFT;
+    }
+
+    function mint(uint256 id) external {
+        BaseNFT baseNFT = nftContracts[id];
+        baseNFT.mint();
     }
 }
