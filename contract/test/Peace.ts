@@ -8,9 +8,10 @@ describe("Peace", () => {
         const peace = await Peace.deploy();
 
         await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
-        const { name, introduction } = await peace.getSupporterInfo(0);
+        const [name, introduction] = await peace.getSupporterInfo(0);
 
-        expect(name === "person" && introduction === "I'm a good boy.").to.equal(true);
+        expect(name).to.equal("person");
+        expect(introduction).to.equal("I'm a good boy.");
     })
 
     it("Register as project", async () => {
@@ -19,9 +20,10 @@ describe("Peace", () => {
         const peace = await Peace.deploy();
 
         await peace.connect(project).registerAsProject("superProject", "This is the best project ever.");
-        const { name, description } = await peace.getProjectInfo(0);
+        const [name, description] = await peace.getProjectInfo(0);
 
-        expect(name === "superProject" && description === "This is the best project ever.").to.equal(true);
+        expect(name).to.equal("superProject");
+        expect(description).to.equal("This is the best project ever.");
     })
 
     it("Number of registered supporters", async () => {
@@ -90,7 +92,18 @@ describe("Peace", () => {
 
         await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
 
-        await expect(peace.connect(person).changeSupporterInfo("person", "I'm a bad boy."))
-            .to.emit(peace, "onChangeSupporterInfo").withArgs(0, "person", "I'm a bad boy.");
+        await expect(peace.connect(person).fixSupporterInfo("person", "I'm a bad boy."))
+            .to.emit(peace, "onFixSupporterInfo").withArgs(0, "person", "I'm a bad boy.");
     })
+
+    // it("Define new NFT", async () => {
+    //     const [projects] = await ethers.getSigners();
+    //     const Peace = await ethers.getContractFactory("Peace");
+    //     const peace = await Peace.deploy();
+
+    //     await peace.connect(projects).registerAsProject("project", "This is the best project ever.");
+    //     await peace.connect(projects).defineNewNFT("BestProjectEver", "BPE");
+
+    //     await peace.connect(projects).mint(0);
+    // })
 })

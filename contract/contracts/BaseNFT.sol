@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.18;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
@@ -13,7 +12,6 @@ contract BaseNFT is ERC721URIStorage {
 
     constructor(string memory name, string memory symbol) ERC721(name, symbol) {
         owner = msg.sender;
-        console.log(name, symbol, owner);
     }
 
     function mint() external {
@@ -21,10 +19,5 @@ contract BaseNFT is ERC721URIStorage {
         uint256 newItemId = _tokenIds.current();
         _safeMint(msg.sender, newItemId);
         _setTokenURI(newItemId, "Test data");
-        console.log(
-            "An NFT w/ ID %s has been minted to %s",
-            newItemId,
-            msg.sender
-        );
     }
 }
