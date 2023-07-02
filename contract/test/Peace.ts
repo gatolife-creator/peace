@@ -2,10 +2,26 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 describe("Peace", () => {
-    it("Register as supporter", async () => {
-        const [person] = await ethers.getSigners();
+    const getContracts = async () => {
+        const [owner] = await ethers.getSigners();
+        const Storage = await ethers.getContractFactory("PeaceStorage");
+        const storage = await Storage.connect(owner).deploy();
+
+        const PeacefulToken = await ethers.getContractFactory("PeacefulToken");
+        const peacefulToken = await PeacefulToken.deploy();
+
         const Peace = await ethers.getContractFactory("Peace");
-        const peace = await Peace.deploy();
+        const peace = await Peace.deploy(storage.getAddress(), peacefulToken.getAddress(), { value: 10000 });
+
+        await storage.connect(owner).updateContract(peace.getAddress());
+        await peacefulToken.connect(owner).updateContract(peace.getAddress());
+
+        return { owner, storage, peacefulToken, peace };
+    }
+
+    it("Register as supporter", async () => {
+        const { peace } = await getContracts();
+        const [person] = await ethers.getSigners();
 
         await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
         const [name, introduction] = await peace.getSupporterInfo(0);
@@ -15,9 +31,8 @@ describe("Peace", () => {
     })
 
     it("Register as project", async () => {
+        const { peace } = await getContracts();
         const [project] = await ethers.getSigners();
-        const Peace = await ethers.getContractFactory("Peace");
-        const peace = await Peace.deploy();
 
         await peace.connect(project).registerAsProject("superProject", "This is the best project ever.");
         const [name, description] = await peace.getProjectInfo(0);
@@ -27,9 +42,8 @@ describe("Peace", () => {
     })
 
     it("Number of registered supporters", async () => {
+        const { peace } = await getContracts();
         const [person1, person2, person3, person4] = await ethers.getSigners();
-        const Peace = await ethers.getContractFactory("Peace");
-        const peace = await Peace.deploy();
 
         await peace.connect(person1).registerAsSupporter("person1", "I'm a good boy.");
         await peace.connect(person2).registerAsSupporter("person2", "I'm a good boy.");
@@ -40,9 +54,8 @@ describe("Peace", () => {
     })
 
     it("Number of registered projects", async () => {
+        const { peace } = await getContracts();
         const [project1, project2, project3, project4] = await ethers.getSigners();
-        const Peace = await ethers.getContractFactory("Peace");
-        const peace = await Peace.deploy();
 
         await peace.connect(project1).registerAsProject("project1", "This is the best project ever.");
         await peace.connect(project2).registerAsProject("project2", "This is the best project ever.");
@@ -53,21 +66,19 @@ describe("Peace", () => {
     })
 
     it("Get balance of peacefulToken", async () => {
+        const { peacefulToken, peace } = await getContracts();
         const [person, project] = await ethers.getSigners();
-        const Peace = await ethers.getContractFactory("Peace");
-        const peace = await Peace.deploy();
 
         await peace.connect(project).registerAsProject("project", "This is the best project ever.");
         await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
         await peace.connect(person).donate(0, { value: 20000 });
 
-        expect(await peace.balanceOf(person.address)).to.equal(20000);
+        expect(await peacefulToken.balanceOf(person.address)).to.equal(20000);
     })
 
     it("On donate", async () => {
+        const { peace } = await getContracts();
         const [person, project] = await ethers.getSigners();
-        const Peace = await ethers.getContractFactory("Peace");
-        const peace = await Peace.deploy();
 
         await peace.connect(project).registerAsProject("project", "This is the best project ever.");
         await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
@@ -77,18 +88,16 @@ describe("Peace", () => {
     })
 
     it("On register as supporter", async () => {
+        const { peace } = await getContracts();
         const [person] = await ethers.getSigners();
-        const Peace = await ethers.getContractFactory("Peace");
-        const peace = await Peace.deploy();
 
         await expect(peace.connect(person).registerAsSupporter("person", "I'm a good boy."))
             .to.emit(peace, "onRegisterAsSupporter").withArgs(0, "person", "I'm a good boy.");
     })
 
     it("On change supporter info", async () => {
+        const { peace } = await getContracts();
         const [person] = await ethers.getSigners();
-        const Peace = await ethers.getContractFactory("Peace");
-        const peace = await Peace.deploy();
 
         await peace.connect(person).registerAsSupporter("person", "I'm a good boy.");
 
