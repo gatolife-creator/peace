@@ -2,14 +2,14 @@
 pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./PeaceStorage.sol";
-import "./PeacefulToken.sol";
+import "./interfaces/IPeaceStorage.sol";
+import "./interfaces/IPeacefulToken.sol";
 
 contract Peace {
     using SafeMath for uint256;
     address public owner;
-    PeaceStorage peaceStorage;
-    PeacefulToken tokenContract;
+    IPeaceStorage peaceStorage;
+    IPeacefulToken tokenContract;
 
     uint256 gasFee;
 
@@ -22,8 +22,8 @@ contract Peace {
 
     constructor(address storageAddress, address tokenAddress) payable {
         owner = msg.sender;
-        peaceStorage = PeaceStorage(storageAddress);
-        tokenContract = PeacefulToken(tokenAddress);
+        peaceStorage = IPeaceStorage(storageAddress);
+        tokenContract = IPeacefulToken(tokenAddress);
     }
 
     function addGusFee() external payable {
@@ -31,8 +31,8 @@ contract Peace {
     }
 
     function registerAsSupporter(
-        string memory name,
-        string memory intro
+        string calldata name,
+        string calldata intro
     ) external {
         peaceStorage.registerAsSupporter(name, intro, msg.sender);
         emit onRegisterAsSupporter(
@@ -42,19 +42,21 @@ contract Peace {
         );
     }
 
-    function getSupporterName(uint256 id) public view returns (string memory) {
+    function getSupporterName(
+        uint256 id
+    ) external view returns (string memory) {
         return peaceStorage.getSupporterName(id);
     }
 
     function getSupporterInfo(
         uint256 id
-    ) public view returns (string memory, string memory) {
+    ) external view returns (string memory, string memory) {
         return peaceStorage.getSupporterInfo(id);
     }
 
     function fixSupporterInfo(
-        string memory name,
-        string memory intro
+        string calldata name,
+        string calldata intro
     ) external {
         peaceStorage.fixSupporterInfo(name, intro, msg.sender);
         emit onFixSupporterInfo(
@@ -69,8 +71,8 @@ contract Peace {
     }
 
     function registerAsProject(
-        string memory name,
-        string memory desc
+        string calldata name,
+        string calldata desc
     ) external {
         peaceStorage.registerAsProject(name, desc, msg.sender);
         emit onRegisterAsProject(
@@ -82,11 +84,14 @@ contract Peace {
 
     function getProjectInfo(
         uint256 id
-    ) public view returns (string memory, string memory) {
+    ) external view returns (string memory, string memory) {
         return peaceStorage.getProjectInfo(id);
     }
 
-    function fixProjectInfo(string memory name, string memory desc) external {
+    function fixProjectInfo(
+        string calldata name,
+        string calldata desc
+    ) external {
         peaceStorage.fixProjectInfo(name, desc, msg.sender);
         emit onFixProjectInfo(
             peaceStorage.getProjectIdFromAddress(msg.sender),
@@ -99,7 +104,7 @@ contract Peace {
         return peaceStorage.getNumOfProjects();
     }
 
-    function donate(uint256 id) public payable {
+    function donate(uint256 id) external payable {
         peaceStorage.donate(id, msg.value, msg.sender);
         tokenContract.mint(msg.sender, msg.value);
         emit onDonate(
@@ -118,14 +123,7 @@ contract Peace {
         emit onWithdraw(amount);
     }
 
-    // function defineNewNFT(string memory name, string memory symbol) external {
-    //     nftContracts[projectIdFromAddress[msg.sender]] = new BaseNFT(
-    //         name,
-    //         symbol
-    //     );
-    // }
-
-    // function mint(uint256 id) external {
-    //     nftContracts[id].mint();
-    // }
+    function changeOwner(address _address) external {
+        owner = _address;
+    }
 }

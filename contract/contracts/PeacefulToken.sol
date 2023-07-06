@@ -21,7 +21,7 @@ contract PeacefulToken is ERC20 {
         owner = msg.sender;
     }
 
-    function mint(address sender, uint256 amount) public payable {
+    function mint(address sender, uint256 amount) external payable {
         return _mint(sender, amount);
     }
 

@@ -10,7 +10,7 @@ export default function Layout({ children }: Props) {
   return (
     <>
       <Head>
-        <title>ChatApp</title>
+        <title>Peace</title>
         <meta name="description" content="ChatApp" />
         <link rel="icon" href="/favicon.ico" />
       </Head>

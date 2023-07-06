@@ -4,7 +4,7 @@ import { Peace } from "../../contract/typechain-types/contracts/Peace";
 import abi from "../utils/Peace.json";
 import { getEthereum } from "../utils/ethereum";
 
-const CONTRACT_ADDRESS = "0xDC543B90ABE5Ed935C0c44B88040b13eff290B66";
+const CONTRACT_ADDRESS = "0x287be1834aB1D4E8020b8BeAc421279e4E440c71";
 const CONTRACT_ABI = abi.abi;
 
 type Props = {
@@ -43,7 +43,9 @@ export const usePeaceContract = ({ currentAccount }: Props) => {
     }
 
     try {
-      const tx = await peaceContract.registerAsSupporter(name, intro);
+      const tx = await peaceContract.registerAsSupporter(name, intro, {
+        gasLimit: 100000,
+      });
       setProcessing(true);
       await tx.wait();
       setProcessing(false);
@@ -61,6 +63,7 @@ export const usePeaceContract = ({ currentAccount }: Props) => {
       setProcessing(true);
       const [name, intro] = await peaceContract.getSupporterInfo(id);
       setProcessing(false);
+      return { name, intro };
     } catch (err) {
       console.log(err);
       alert("Failed to get info");
@@ -83,6 +86,22 @@ export const usePeaceContract = ({ currentAccount }: Props) => {
     }
   }
 
+  async function changeOwner(address: string) {
+    if (!peaceContract) {
+      return;
+    }
+
+    try {
+      const tx = await peaceContract.changeOwner(address);
+      setProcessing(true);
+      await tx.wait();
+      setProcessing(false);
+    } catch (err) {
+      console.log(err);
+      alert("Failed to change owner");
+    }
+  }
+
   useEffect(() => {
     getPeaceContract();
   }, [currentAccount, ethereum]);
@@ -92,5 +111,6 @@ export const usePeaceContract = ({ currentAccount }: Props) => {
     registerAsSupporter,
     getSupporterInfo,
     registerAsProject,
+    changeOwner,
   };
 };

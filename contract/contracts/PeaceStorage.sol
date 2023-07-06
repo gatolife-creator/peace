@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./BaseNFT.sol";
+import "hardhat/console.sol";
 
 contract PeaceStorage {
     using SafeMath for uint256;
@@ -10,7 +11,7 @@ contract PeaceStorage {
     address contractAddress;
     address owner;
 
-    constructor() {
+    constructor() payable {
         owner = msg.sender;
     }
 
@@ -55,11 +56,11 @@ contract PeaceStorage {
     mapping(uint256 => uint256) donationAmountsForProject;
 
     function registerAsSupporter(
-        string memory name,
-        string memory intro,
+        string calldata name,
+        string calldata intro,
         address sender
     ) external isValidContract {
-        require(!isSupporterRegistered[sender]);
+        require(!isSupporterRegistered[sender], "already registered");
         supporters[supporterId] = sender;
         supporterIdFromAddress[sender] = supporterId;
         isSupporterRegistered[sender] = true;
@@ -67,8 +68,11 @@ contract PeaceStorage {
         supporterId = supporterId.add(1);
     }
 
-    function getSupporterName(uint256 id) public view returns (string memory) {
-        require(isSupporterRegistered[supporters[id]]);
+    function getSupporterName(
+        uint256 id
+    ) external view returns (string memory) {
+        require(id < supporterId, "not registered yet");
+        // require(isSupporterRegistered[supporters[id]], "not registered yet");
         return supporterInfo[supporterId].name;
     }
 
@@ -80,16 +84,16 @@ contract PeaceStorage {
 
     function getSupporterInfo(
         uint256 id
-    ) public view returns (string memory, string memory) {
+    ) external view returns (string memory, string memory) {
         return (supporterInfo[id].name, supporterInfo[id].intro);
     }
 
     function fixSupporterInfo(
-        string memory name,
-        string memory intro,
+        string calldata name,
+        string calldata intro,
         address sender
     ) external isValidContract {
-        require(isSupporterRegistered[sender]);
+        require(isSupporterRegistered[sender], "not registered yet");
 
         uint256 id = supporterIdFromAddress[sender];
         supporterInfo[id] = Supporter({name: name, intro: intro});
@@ -100,11 +104,11 @@ contract PeaceStorage {
     }
 
     function registerAsProject(
-        string memory name,
-        string memory desc,
+        string calldata name,
+        string calldata desc,
         address sender
     ) external isValidContract {
-        require(!isProjectRegistered[sender]);
+        require(!isProjectRegistered[sender], "already registered");
         projects[projectId] = sender;
         projectIdFromAddress[sender] = projectId;
         projectInfo[projectId] = Project({name: name, desc: desc});
@@ -114,8 +118,8 @@ contract PeaceStorage {
 
     function getProjectInfo(
         uint256 id
-    ) public view returns (string memory, string memory) {
-        require(isProjectRegistered[projects[id]]);
+    ) external view returns (string memory, string memory) {
+        require(isProjectRegistered[projects[id]], "not registered yet");
         return (projectInfo[id].name, projectInfo[id].desc);
     }
 
@@ -126,11 +130,11 @@ contract PeaceStorage {
     }
 
     function fixProjectInfo(
-        string memory name,
-        string memory desc,
+        string calldata name,
+        string calldata desc,
         address sender
     ) external isValidContract {
-        require(isProjectRegistered[sender]);
+        require(isProjectRegistered[sender], "not registered yet");
         uint256 id = projectIdFromAddress[sender];
         projectInfo[id] = Project({name: name, desc: desc});
     }
@@ -139,9 +143,14 @@ contract PeaceStorage {
         return projectId;
     }
 
-    function donate(uint256 id, uint256 amount, address sender) public payable {
+    function donate(
+        uint256 id,
+        uint256 amount,
+        address sender
+    ) external payable {
         require(
-            isSupporterRegistered[sender] && isProjectRegistered[projects[id]]
+            isSupporterRegistered[sender] && isProjectRegistered[projects[id]],
+            "supporter or project not registered"
         );
         Donation memory donation = Donation({account: sender, amount: amount});
         donations[id].push(donation);
